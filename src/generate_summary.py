@@ -1,5 +1,7 @@
-from '../models' import Extractive, Abstractive
-from '../utils' import DataProcessor
+from models.abstractive import Abstractive
+from models.extractive import Extractive
+from utils.data_processing import DataProcessor
+
 import sys
 
 class Pipeline:
@@ -13,19 +15,19 @@ class Pipeline:
         self.abstractive_worder = Abstractive()
 
     def evaluate_cluster(self):
-        self.extractive_summary = self.extractive_summarizer.summarize(self.data, self.query)
+        extractive_summary = self.extractive_summarizer.summarize(self.data, self.query)
         self.abstractive_rewording = self.abstractive_worder.reword(extractive_summary)
 
     def generate_summary(self):
         formatted_summary = self.format(self.abstractive_rewording)
-        self.save(formatted)
+        self.save(formatted_summary)
 
     def format(self, summary):
         #Perform formatting if needed
         self.save(summary)
 
     def save(self, summary):
-        with open(self.path, 'w') as f:
+        with open(self.save_path, 'w') as f:
             for word in summary:
                 f.write(word)
 
