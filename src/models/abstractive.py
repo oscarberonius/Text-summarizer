@@ -3,4 +3,5 @@ class Abstractive:
         pass
 
     def reword(self, text):
-        return "reworded"
+        ret = ["reworded", "summary"]
+        return ret
