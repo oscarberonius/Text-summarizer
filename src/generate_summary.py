@@ -7,7 +7,7 @@ import sys
 
 class Pipeline:
 
-    def __init__(self, vscodearg=None, data_path='/data/diabloDataset', query=None, save_path='/data/summary.txt'): 
+    def __init__(self, vscodearg=None, data_path='/data/en-ingress-dataset', query=None, save_path='/data/summary.txt'): 
         self.path = dirname(__file__)
         data_processor = DataProcessor()
         self.data = data_processor.process_data(self.path+data_path)
@@ -38,5 +38,5 @@ class Pipeline:
 if __name__ == '__main__':
     args = sys.argv
     pipeline = Pipeline(args)
-    pipeline.evaluate_cluster()
-    pipeline.generate_summary()
+ #   pipeline.evaluate_cluster()
+ #   pipeline.generate_summary()
