@@ -7,9 +7,10 @@ import sys
 
 class Pipeline:
 
-    def __init__(self, data_path='./data/cluster', query=None, save_path='/data/summary.txt'): 
+    def __init__(self, vscodearg=None, data_path='/data/diabloDataset', query=None, save_path='/data/summary.txt'): 
+        self.path = dirname(__file__)
         data_processor = DataProcessor()
-        self.data = data_processor.process_data(data_path)
+        self.data = data_processor.process_data(self.path+data_path)
         self.query = query
         self.save_path = save_path
         self.extractive_summarizer = Extractive()
@@ -27,7 +28,7 @@ class Pipeline:
         self.save(summary)
 
     def save(self, summary):
-        path = dirname(__file__)+self.save_path
+        path = self.path+self.save_path
         with open(path, 'w') as f:
             for word in summary:
                 f.write(word+' ')
