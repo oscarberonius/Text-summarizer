@@ -1,6 +1,7 @@
 import json
 import tarfile
 import os
+import glob
 
 class DataProcessor:
     def __init__(self):
@@ -12,12 +13,17 @@ class DataProcessor:
         else:
             text_ingress_list = self.read_data_folder(path)
 
-    def read_data_folder(self, path):  
-        
-        tar = tarfile.open(path+'/02d8cf54-a762-46a8-9251-944f3d43d0b2_00001_processed.tar.gz')
-        text_ingress_list = self.process_messages(tar)
-        tar.close()
-        # Untar all tarred folders in path
+    def read_data_folder(self, path):
+        text_ingress_list = []
+
+        # Open all tar files and process the containing messages
+        for file in glob.glob(os.path.join(path, '*.tar.gz')):
+            tar = tarfile.open(file)
+            current_text_ingress_list = self.process_messages(tar)
+            text_ingress_list.extend(current_text_ingress_list)
+            tar.close()
+
+        return text_ingress_list
 
     def process_messages(self, tar):
         text_ingress_list = []
