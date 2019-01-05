@@ -2,6 +2,8 @@ import json
 import tarfile
 import os
 import glob
+from os.path import dirname
+from collections import Counter
 
 class DataProcessor:
     def __init__(self):
@@ -37,7 +39,8 @@ class DataProcessor:
             fileobj = tar.extractfile(member)
             message = json.load(fileobj)
             text, ingress = self.get_text_ingress(message)
-            res = dict({'text': text, 'ingress': ingress})
+            # We use \t as start and \n as end symbols for target text
+            res = dict({'text': text, 'ingress': '\t'+ingress+'\n'})
             text_ingress_list.append(res)
 
         return text_ingress_list
@@ -51,7 +54,8 @@ class DataProcessor:
         text_ingress_list = []
         for quiddity in quiddities:
             text,ingress = self.get_text_ingress(quiddity['quiddity'])
-            res = dict({'text': text, 'ingress': ingress})
+            # We use \t as start and \n as end symbols for target text
+            res = dict({'text': text, 'ingress': '\t'+ingress+'\n'})
             text_ingress_list.append(res)
 
         return text_ingress_list
@@ -62,3 +66,25 @@ class DataProcessor:
         ingress = dictionary['body']['ingress']['text']
 
         return text, ingress
+
+    def clean_data(self, data):
+        path = dirname(__file__) + '/data'
+
+        count = Counter()
+
+        def baddict(dictionary, co):
+            co[0] += 1
+            if co[0] % 1000 == 0:
+                print(co[0])
+            for c in dictionary['text']:
+                if ord(c) >= 256:
+                    return True
+            for c in dictionary['ingress']:
+                if ord(c) >= 256:
+                    return True
+            return False
+
+        clean_data = [d for d in data if not baddict(d, count)]
+
+        with open('clean_data', 'w') as fout:
+            json.dump(clean_data, fout)
