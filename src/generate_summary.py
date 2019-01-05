@@ -3,6 +3,7 @@ from models.extractive import Extractive
 from utils.data_processing import DataProcessor
 
 from os.path import dirname
+import json
 import sys
 
 class Pipeline:
@@ -10,11 +11,16 @@ class Pipeline:
     def __init__(self, vscodearg=None, data_path='/data/en-ingress-dataset', query=None, save_path='/data/summary.txt'): 
         self.path = dirname(__file__)
         data_processor = DataProcessor()
-        self.data = data_processor.process_data(self.path+data_path)
+        #self.data = data_processor.process_data(self.path+data_path)
+        #data_processor.clean_data(self.data)
         self.query = query
         self.save_path = save_path
+
+        with open(self.path+'/data/clean_data') as f:
+            self.data = json.load(f)
+
         self.extractive_summarizer = Extractive()
-        self.abstractive_worder = Abstractive()
+        self.abstractive_worder = Abstractive(self.data)
 
     def evaluate_cluster(self):
         extractive_summary = self.extractive_summarizer.summarize(self.data, self.query)
