@@ -5,6 +5,7 @@ from utils.data_processing import DataProcessor
 from os.path import dirname
 import json
 import sys
+import tarfile
 
 class Pipeline:
 
@@ -16,8 +17,17 @@ class Pipeline:
         self.query = query
         self.save_path = save_path
 
-        with open(self.path+'/data/clean_data') as f:
-            self.data = json.load(f)
+        tar1 = tarfile.open(self.path+'/data/clean_data1.tar.gz')
+        info1 = tar1.getmembers()
+        file1 = tar1.extractfile(info1[0])
+        obj1 = json.load(file1)
+
+        tar2 = tarfile.open(self.path + '/data/clean_data2.tar.gz')
+        info2 = tar2.getmembers()
+        file2 = tar2.extractfile(info2[0])
+        obj2 = json.load(file2)
+
+        self.data = obj1+obj2
 
         self.extractive_summarizer = Extractive()
         self.abstractive_worder = Abstractive(self.data)
