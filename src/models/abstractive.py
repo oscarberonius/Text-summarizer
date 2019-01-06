@@ -11,7 +11,7 @@ class Abstractive:
     def __init__(self, data=None):
         data = data # list(dict({text, ingress}))
         self.batch_size = 64  # Batch size for training.
-        self.epochs = 100  # Number of epochs to train for.
+        self.epochs = 50  # Number of epochs to train for.
         self.latent_dim = 256  # Latent dimensionality of the encoding space.
         self.num_samples = 10000  # Number of samples to train on.
 
