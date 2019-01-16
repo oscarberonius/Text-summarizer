@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import math
 from keras.models import Model
 from keras.layers import Input, LSTM, Dense
 import numpy as np
@@ -14,6 +15,7 @@ class Abstractive:
         self.epochs = 50  # Number of epochs to train for.
         self.latent_dim = 256  # Latent dimensionality of the encoding space.
         self.num_samples = 10000  # Number of samples to train on.
+        self.data_chunk_size = self.batch_size * 10 # Size of the data chunks that will be generated and trained on at a time. IMPORTANT: If too large then all RAM will be eaten.
 
         self.input_characters = set()
         self.target_characters = set()
@@ -49,27 +51,6 @@ class Abstractive:
         self.target_token_index = dict(
             [(char, i) for i, char in enumerate(self.target_characters)])
 
-        encoder_input_data = np.zeros(
-            (len(self.input_texts), self.max_encoder_seq_length, self.num_encoder_tokens),
-            dtype='int8')
-        decoder_input_data = np.zeros(
-            (len(self.input_texts), self.max_decoder_seq_length, self.num_decoder_tokens),
-            dtype='int8')
-        decoder_target_data = np.zeros(
-            (len(self.input_texts), self.max_decoder_seq_length, self.num_decoder_tokens),
-            dtype='int8')
-
-        for i, (input_text, target_text) in enumerate(zip(self.input_texts, self.target_texts)):
-            for t, char in enumerate(input_text):
-                encoder_input_data[i, t, self.input_token_index[char]] = 1.
-            for t, char in enumerate(target_text):
-                # decoder_target_data is ahead of decoder_input_data by one timestep
-                decoder_input_data[i, t, self.target_token_index[char]] = 1.
-                if t > 0:
-                    # decoder_target_data will be ahead by one timestep
-                    # and will not include the start character.
-                    decoder_target_data[i, t - 1, self.target_token_index[char]] = 1.
-
         # Define an input sequence and process it.
         encoder_inputs = Input(shape=(self.max_encoder_seq_length, self.num_encoder_tokens))
         encoder1 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
@@ -95,10 +76,22 @@ class Abstractive:
 
         # Run training
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
-        model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
+
+        chunks = math.floor(self.num_samples/self.data_chunk_size)
+        residual_chunk = self.num_samples%self.data_chunk_size # TODO: Use this in a neat way
+
+        for i in range(0,chunks):
+            print("Training on chunk # ´", i)
+
+            encoder_input_data, decoder_input_data, decoder_target_data = self.getTrainingChunk(i)
+
+            model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
                 batch_size=self.batch_size,
                 epochs=self.epochs,
                 validation_split=0.2)
+
+        encoder_input_data, _, _ = self.getTrainingChunk(0) # Only for testing a sentence from the input when decoding later. TODO: Make proper decoding module 
+
         # Save model
         model.save('s2s.h5')
 
@@ -177,7 +170,33 @@ class Abstractive:
             print('Decoded sentence:', decoded_sentence)
 
 
+    def getTrainingChunk(self, chunk):
 
+        encoder_input_data = np.zeros(
+            (self.data_chunk_size, self.max_encoder_seq_length, self.num_encoder_tokens),
+            dtype='int8')
+        decoder_input_data = np.zeros(
+            (self.data_chunk_size, self.max_decoder_seq_length, self.num_decoder_tokens),
+            dtype='int8')
+        decoder_target_data = np.zeros(
+            (self.data_chunk_size, self.max_decoder_seq_length, self.num_decoder_tokens),
+            dtype='int8')
+
+        for i in range(0, self.data_chunk_size):
+            input_text = self.input_texts[i+self.data_chunk_size*chunk]
+            target_text = self.target_texts[i+self.data_chunk_size*chunk]
+
+            for t, char in enumerate(input_text):
+                encoder_input_data[i, t, self.input_token_index[char]] = 1.
+            for t, char in enumerate(target_text):
+                # decoder_target_data is ahead of decoder_input_data by one timestep
+                decoder_input_data[i, t, self.target_token_index[char]] = 1.
+                if t > 0:
+                    # decoder_target_data will be ahead by one timestep
+                    # and will not include the start character.
+                    decoder_target_data[i, t - 1, self.target_token_index[char]] = 1.
+        
+        return encoder_input_data, decoder_input_data, decoder_target_data
 
     def reword(self, text):
         pass
