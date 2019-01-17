@@ -81,10 +81,11 @@ class Abstractive:
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 
         chunks = int(math.floor(self.num_samples/self.data_chunk_size))
+        print("# of chunks: ", chunks)
         residual_chunk = self.num_samples%self.data_chunk_size # TODO: Use this in a neat way
 
         for i in range(0,chunks):
-            print("Training on chunk # ´", i)
+            print("Training on chunk #", i)
 
             encoder_input_data, decoder_input_data, decoder_target_data = self.getTrainingChunk(i)
 
