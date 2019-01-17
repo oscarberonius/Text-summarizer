@@ -17,7 +17,6 @@ class Abstractive:
         self.num_samples = 200000  # Number of samples to train on.
         if len(data) < self.num_samples:
             self.num_samples = len(data)
-        print(self.num_samples)
         self.data_chunk_size = self.batch_size * 10 # Size of the data chunks that will be generated and trained on at a time. IMPORTANT: If too large then all RAM will be eaten.
 
         self.input_characters = set()
