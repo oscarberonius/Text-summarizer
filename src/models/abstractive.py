@@ -77,7 +77,7 @@ class Abstractive:
         # Run training
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 
-        chunks = math.floor(self.num_samples/self.data_chunk_size)
+        chunks = int(math.floor(self.num_samples/self.data_chunk_size))
         residual_chunk = self.num_samples%self.data_chunk_size # TODO: Use this in a neat way
 
         for i in range(0,chunks):
