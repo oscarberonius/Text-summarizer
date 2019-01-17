@@ -106,3 +106,7 @@ class DataProcessor:
         plt.subplot(212)
         plt.hist(y, range=(0, max(y)), color='blue', label='ingress lengths')
         plt.show()
+
+    def remove_large_texts(self, dictionaries, text_threshold, ingress_threshold):
+        reduced = [d for d in dictionaries if len(d['text']) <= text_threshold and len(d['ingress']) <= ingress_threshold]
+        return reduced

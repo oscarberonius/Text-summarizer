@@ -16,6 +16,8 @@ class Pipeline:
         #data_processor.clean_data(self.data)
         self.query = query
         self.save_path = save_path
+        text_size_threshold = 3000
+        ingress_size_threshold = 3000
 
         tar1 = tarfile.open(self.path+'/data/clean_data1.tar.gz')
         info1 = tar1.getmembers()
@@ -27,10 +29,9 @@ class Pipeline:
         file2 = tar2.extractfile(info2[0])
         obj2 = json.load(file2)
 
-        self.data = obj1+obj2
-
+        data = obj1+obj2
+        self.data = data_processor.remove_large_texts(data,text_size_threshold,ingress_size_threshold)
         #data_processor.visualize_data_point_sizes(self.data)
-
         #self.extractive_summarizer = Extractive()
         self.abstractive_worder = Abstractive(self.data)
 
