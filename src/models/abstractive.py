@@ -14,7 +14,10 @@ class Abstractive:
         self.batch_size = 64  # Batch size for training.
         self.epochs = 50  # Number of epochs to train for.
         self.latent_dim = 256  # Latent dimensionality of the encoding space.
-        self.num_samples = 10000  # Number of samples to train on.
+        self.num_samples = 200000  # Number of samples to train on.
+        if len(data) < self.num_samples:
+            self.num_samples = len(data)
+        print(self.num_samples)
         self.data_chunk_size = self.batch_size * 10 # Size of the data chunks that will be generated and trained on at a time. IMPORTANT: If too large then all RAM will be eaten.
 
         self.input_characters = set()
@@ -22,7 +25,7 @@ class Abstractive:
         self.input_texts = []
         self.target_texts = []
 
-        for dictionary in data[0:self.num_samples]:
+        for dictionary in data[0:self.num_samples-1]:
 
             self.input_texts.append(dictionary['text'])
             self.target_texts.append(dictionary['ingress'])
