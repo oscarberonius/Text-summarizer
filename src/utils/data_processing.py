@@ -4,6 +4,8 @@ import os
 import glob
 from os.path import dirname
 from collections import Counter
+import matplotlib.pyplot as plt
+import numpy as np
 
 class DataProcessor:
     def __init__(self):
@@ -88,3 +90,19 @@ class DataProcessor:
 
         with open('clean_data', 'w') as fout:
             json.dump(clean_data, fout)
+
+    
+    def visualize_data_point_sizes(self, dictionaries):
+        x = []
+        y = []
+        for d in dictionaries:
+            x.append(len(d['text']))
+            y.append(len(d['ingress']))
+        print("Mean length of texts: ", np.mean(x))
+        print("Mean length of ingresses: ", np.mean(y))
+
+        plt.subplot(211)
+        plt.hist(x, range=(0, max(x)), color='red', label='text lengths')
+        plt.subplot(212)
+        plt.hist(y, range=(0, max(y)), color='blue', label='ingress lengths')
+        plt.show()

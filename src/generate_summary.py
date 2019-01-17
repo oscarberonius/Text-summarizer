@@ -29,7 +29,9 @@ class Pipeline:
 
         self.data = obj1+obj2
 
-        self.extractive_summarizer = Extractive()
+        #data_processor.visualize_data_point_sizes(self.data)
+
+        #self.extractive_summarizer = Extractive()
         self.abstractive_worder = Abstractive(self.data)
 
     def evaluate_cluster(self):
