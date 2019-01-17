@@ -17,7 +17,7 @@ class Abstractive:
         self.num_samples = 200000  # Number of samples to train on.
         if len(data) < self.num_samples:
             self.num_samples = len(data)
-        self.data_chunk_size = self.batch_size * 10 # Size of the data chunks that will be generated and trained on at a time. IMPORTANT: If too large then all RAM will be eaten.
+        self.data_chunk_size = self.batch_size #* 10 # Size of the data chunks that will be generated and trained on at a time. IMPORTANT: If too large then all RAM will be eaten.
 
         self.input_characters = set()
         self.target_characters = set()
@@ -79,7 +79,7 @@ class Abstractive:
         # Run training
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy')
 
-        chunks = int(math.floor(self.num_samples/self.data_chunk_size))
+        chunks = 1#int(math.floor(self.num_samples/self.data_chunk_size))
         print("# of chunks: ", chunks)
         residual_chunk = self.num_samples%self.data_chunk_size # TODO: Use this in a neat way
 
@@ -161,16 +161,20 @@ class Abstractive:
                 states_value = state#[h, c]
 
             return decoded_sentence
-
-
-        for seq_index in range(100):
-            # Take one sequence (part of the training set)
-            # for trying out decoding.
-            input_seq = encoder_input_data[seq_index: seq_index + 1]
-            decoded_sentence = decode_sequence(input_seq)
-            print('-')
-            print('Input sentence:', self.input_texts[seq_index])
-            print('Decoded sentence:', decoded_sentence)
+        path = dirname(__file__)+'/../data/output.txt'
+        
+        with open(path, 'wb') as f:
+            for seq_index in range(100):
+                # Take one sequence (part of the training set)
+                # for trying out decoding.
+                input_seq = encoder_input_data[seq_index: seq_index + 1]
+                decoded_sentence = decode_sequence(input_seq)
+                lines = ['########################\n', 'Input sentence: ' + self.input_texts[seq_index]+'\n', '---------------------\n','Decoded sentence: ' + decoded_sentence+'\n']
+                lines_unicode = []
+                for line in lines:
+                    lines_unicode.append(line.encode('utf-8'))
+                f.writelines(lines_unicode)
+        print('Output generated at ', path)
 
 
     def getTrainingChunk(self, chunk):
