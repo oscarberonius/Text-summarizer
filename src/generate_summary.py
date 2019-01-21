@@ -12,7 +12,7 @@ class Pipeline:
 
     def __init__(self, vscodearg=None, data_path='/data/en-ingress-dataset', query=None, save_path='/data/summary.txt'): 
         self.path = dirname(__file__)
-        data_processor = DataProcessor()
+        self.data_processor = DataProcessor()
         #self.data = data_processor.process_data(self.path+data_path)
         #data_processor.clean_data(self.data)
         self.query = query
@@ -31,8 +31,7 @@ class Pipeline:
         obj2 = json.load(file2)
 
         data = obj1+obj2
-        self.data = data_processor.remove_large_texts(data,text_size_threshold,ingress_size_threshold)
-        #data_processor.visualize_data_point_sizes(self.data)
+        self.data = self.data_processor.remove_large_texts(data,text_size_threshold,ingress_size_threshold)
         self.abstractive_worder = Abstractive(self.data)
 
     def evaluate_cluster(self):
@@ -68,6 +67,9 @@ class Pipeline:
         query = "council australian social media win world Woolworths"
         idf = TfIdf(path, query, extraction_quota=0.5)
         idf.perform_extraction(self.path+'/data/extractive_test_output.txt')
+    
+    def visualize_data(self):
+        self.data_processor.visualize_data_point_sizes(self.data)
 
 if __name__ == '__main__':
     args = sys.argv
