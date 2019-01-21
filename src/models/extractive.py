@@ -18,11 +18,11 @@ class TfIdf:
             self.extraction_quota=extraction_quota
         
         with open(self.doc_path, 'r') as f:
-            self.paragraphs = f.readlines() # TODO: Make split on paragraphs instead of newlines.
+            self.paragraphs = f.readlines() 
         self.paragraphs = [s for s in self.paragraphs if s !='\n']
         self.nd = len(self.paragraphs) # Number of paragraphs
         self.l = int(math.floor(len(self.paragraphs)*self.extraction_quota)) # Number of paragraphs to extract
-        self.query = query
+        self.query = query.lower()
 
     def perform_extraction(self, save_path):
         self.calc_ranks()
@@ -44,20 +44,20 @@ class TfIdf:
 
     def calc_score(self, paragraph):
         score = 0
-        for word in self.query:
+        for word in self.query.split(' '):
             score += self.calc_subscore(word,paragraph)
-
+        int(math.floor(len(self.paragraphs) * self.extraction_quota))
         return score # Score for each paragraph
 
     def calc_subscore(self, word, paragraph):
         ndw = 0.1
-        for paragraph in self.paragraphs:
-            if word in paragraph.split(' '):
+        for p in self.paragraphs:
+            if word in p.lower():
                 ndw+=1
         
         nw = 0
-        for w in paragraph:
-            if w==word:
+        for w in paragraph.split(' '):
+            if word in w.lower():
                 nw+=1
 
         return nw * np.log(self.nd/ndw) # Score of a word in query string for a given paragraph
