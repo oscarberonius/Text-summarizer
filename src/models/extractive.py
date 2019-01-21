@@ -46,7 +46,7 @@ class TfIdf:
         score = 0
         for word in self.query.split(' '):
             score += self.calc_subscore(word,paragraph)
-        int(math.floor(len(self.paragraphs) * self.extraction_quota))
+        
         return score # Score for each paragraph
 
     def calc_subscore(self, word, paragraph):
