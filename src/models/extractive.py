@@ -19,6 +19,7 @@ class TfIdf:
         
         with open(self.doc_path, 'r') as f:
             self.paragraphs = f.readlines() # TODO: Make split on paragraphs instead of newlines.
+        self.paragraphs = [s for s in self.paragraphs if s !='\n']
         self.nd = len(self.paragraphs) # Number of paragraphs
         self.l = int(math.floor(len(self.paragraphs)*self.extraction_quota)) # Number of paragraphs to extract
         self.query = query
@@ -49,9 +50,9 @@ class TfIdf:
         return score # Score for each paragraph
 
     def calc_subscore(self, word, paragraph):
-        ndw = 0
+        ndw = 0.1
         for paragraph in self.paragraphs:
-            if paragraph.contains(word):
+            if word in paragraph.split(' '):
                 ndw+=1
         
         nw = 0
