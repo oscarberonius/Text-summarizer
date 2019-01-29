@@ -32,7 +32,7 @@ class Pipeline:
 
         data = obj1+obj2
         self.data = self.data_processor.remove_large_texts(data,text_size_threshold,ingress_size_threshold)
-        self.abstractive_worder = Abstractive(self.data)
+        #self.abstractive_worder = Abstractive(self.data)
 
     def evaluate_cluster(self):
         extractive_summary = self.extractive_summarizer.summarize(self.data, self.query)
@@ -53,17 +53,26 @@ class Pipeline:
 
         print("Summary generated at ", path)
 
-    def create_extractive_test_file(self):
-        self.extractive_summarizer = Extractive()
-        sample_indices = np.random.rand(20)
+    def create_input_and_target_files(self, nbr_of_files):
+        nbr_of_files = len(self.data) - 1 if nbr_of_files  >= len(self.data) else nbr_of_files
+        sample_indices = np.random.rand(nbr_of_files)
         sample_indices = np.floor(sample_indices*len(self.data)).astype(int)
 
-        with open(self.path+"/data/sample_input_extractive.txt", 'w') as f:
+        with open(self.path+"/data/input.txt", 'w') as f:
             for index in sample_indices:
-                f.write(self.data[index]['ingress']+'\n')
+                line = self.data[index]['text']
+                line = line.replace('\n', '') + '\n'
+                f.write(line.encode('utf-8'))
+
+        with open(self.path+"/data/target.txt", 'w') as f:
+            for index in sample_indices:
+                line = self.data[index]['ingress']
+                line = line.replace('\n', '') + '\n'
+                f.write(line.encode('utf-8'))
+        print("Input and target files created")
 
     def test_extractive(self, query, extraction_quota):
-        path = self.path+'/data/sample_input_extractive.txt'
+        path = self.path+'/data/input.txt'
         query = "council australian social media win world Woolworths"
         idf = TfIdf(path, query, extraction_quota=0.5)
         idf.perform_extraction(self.path+'/data/extractive_test_output.txt')
@@ -74,5 +83,6 @@ class Pipeline:
 if __name__ == '__main__':
     args = sys.argv
     pipeline = Pipeline(args)
+    #pipeline.create_input_and_target_files(300000)
  #   pipeline.evaluate_cluster()
  #   pipeline.generate_summary()
