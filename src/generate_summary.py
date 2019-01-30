@@ -19,6 +19,8 @@ class Pipeline:
         self.save_path = save_path
         text_size_threshold = 3000
         ingress_size_threshold = 3000
+        low_end = 0.01
+        high_end = 0.3
 
         tar1 = tarfile.open(self.path+'/data/clean_data1.tar.gz')
         info1 = tar1.getmembers()
@@ -31,7 +33,8 @@ class Pipeline:
         obj2 = json.load(file2)
 
         data = obj1+obj2
-        self.data = self.data_processor.remove_large_texts(data,text_size_threshold,ingress_size_threshold)
+        data = self.data_processor.remove_large_texts(data,text_size_threshold,ingress_size_threshold)
+        self.data = self.data_processor.remove_unbalanced_texts(data, low_end, high_end)
         #self.abstractive_worder = Abstractive(self.data)
 
     def evaluate_cluster(self):
@@ -83,6 +86,7 @@ class Pipeline:
 if __name__ == '__main__':
     args = sys.argv
     pipeline = Pipeline(args)
-    #pipeline.create_input_and_target_files(300000)
- #   pipeline.evaluate_cluster()
- #   pipeline.generate_summary()
+#    pipeline.visualize_data()
+#    pipeline.create_input_and_target_files(300000)
+#    pipeline.evaluate_cluster()
+#    pipeline.generate_summary()
