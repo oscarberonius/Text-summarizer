@@ -89,10 +89,8 @@ class DataProcessor:
             return False
 
         clean_data = [d for d in data if not baddict(d, count)]
-
-        with open('clean_data', 'w') as fout:
-            json.dump(clean_data, fout)
-
+        return clean_data
+        
     def visualize_data_point_sizes(self, dictionaries):
         x = []
         y = []
