@@ -10,32 +10,44 @@ import numpy as np
 
 class Pipeline:
 
-    def __init__(self, vscodearg=None, data_path='/data/en-ingress-dataset', query=None, save_path='/data/summary.txt'): 
+    def __init__(self, vscodearg=None, data_path='/data/data_set_latest', query=None, save_path='/data/summary.txt'): 
         self.path = dirname(__file__)
         self.data_processor = DataProcessor()
-        #self.data = data_processor.process_data(self.path+data_path)
-        #data_processor.clean_data(self.data)
+    #    self.data = self.data_processor.process_data(self.path+data_path)
+        #print("saving file")
+  #     with open(self.path+'/data/latest_data.json', 'wr') as f:
+   #         json.dump(self.data, f)
+
+
         self.query = query
         self.save_path = save_path
         text_size_threshold = 3000
-        ingress_size_threshold = 3000
+        ingress_size_threshold = 300
         low_end = 0.01
         high_end = 0.3
 
-        tar1 = tarfile.open(self.path+'/data/clean_data1.tar.gz')
-        info1 = tar1.getmembers()
-        file1 = tar1.extractfile(info1[0])
-        obj1 = json.load(file1)
+        #tar = tarfile.open(self.path+'/data/clean_data1.tar.gz')
+        #info = tar.getmembers()
+        #file = tar.extractfile(info1[0])
+        with open(self.path+ '/data/latest_data.json', 'r') as j:
+            obj = json.load(j)
+        data = obj
 
-        tar2 = tarfile.open(self.path + '/data/clean_data2.tar.gz')
-        info2 = tar2.getmembers()
-        file2 = tar2.extractfile(info2[0])
-        obj2 = json.load(file2)
+        # tar1 = tarfile.open(self.path+'/data/clean_data1.tar.gz')
+        # info1 = tar1.getmembers()
+        # file1 = tar1.extractfile(info1[0])
+        # obj1 = json.load(file1)
 
-        data = obj1+obj2
-        data = self.data_processor.remove_large_texts(data,text_size_threshold,ingress_size_threshold)
-        self.data = self.data_processor.remove_unbalanced_texts(data, low_end, high_end)
-        #self.abstractive_worder = Abstractive(self.data)
+        # tar2 = tarfile.open(self.path + '/data/clean_data2.tar.gz')
+        # info2 = tar2.getmembers()
+        # file2 = tar2.extractfile(info2[0])
+        # obj2 = json.load(file2)
+
+        #data = obj1+obj2
+        data = self.data_processor.clean_data(data)
+        data = self.data_processor.remove_unbalanced_texts(data, low_end, high_end)
+        self.data = self.data_processor.remove_large_texts(data, text_size_threshold, ingress_size_threshold)
+          #   self.abstractive_worder = Abstractive(self.data)
 
     def evaluate_cluster(self):
         extractive_summary = self.extractive_summarizer.summarize(self.data, self.query)
@@ -86,7 +98,8 @@ class Pipeline:
 if __name__ == '__main__':
     args = sys.argv
     pipeline = Pipeline(args)
-#    pipeline.visualize_data()
-#    pipeline.create_input_and_target_files(300000)
+
+ #   pipeline.visualize_data()
+    pipeline.create_input_and_target_files(300000000)
 #    pipeline.evaluate_cluster()
 #    pipeline.generate_summary()
