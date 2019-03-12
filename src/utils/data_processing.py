@@ -72,14 +72,7 @@ class DataProcessor:
         return text, ingress
 
     def clean_data(self, data):
-        path = dirname(__file__) + '/data'
-
-        count = Counter()
-
-        def baddict(dictionary, co):
-            co[0] += 1
-            if co[0] % 1000 == 0:
-                print(co[0])
+        def baddict(dictionary):
             for c in dictionary['text']:
                 if ord(c) >= 256:
                     return True
@@ -88,7 +81,7 @@ class DataProcessor:
                     return True
             return False
 
-        clean_data = [d for d in data if not baddict(d, count)]
+        clean_data = [d for d in data if not baddict(d)]
         return clean_data
         
     def visualize_data_point_sizes(self, dictionaries):
