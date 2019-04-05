@@ -130,3 +130,26 @@ class DataProcessor:
                    len(d['ingress']) > 0 and len(d['text']) > 0 and low_end <= len(d['ingress']) / len(
                        d['text']) <= high_end]
         return reduced
+
+    def remove_duplicates(self, data):
+        print('Counting duplicates.')
+        non_duplicates = []
+        resulting_data = []
+        count = 0
+        removed = 0
+
+        for dp in data:
+
+            if dp['ingress'] not in non_duplicates:
+                non_duplicates.append(dp['ingress'])
+                resulting_data.append(dp)
+            else:
+                removed += 1
+            count +=1
+            if count%1000:
+                print(f'At dp # {count}. Removed = {removed}')
+
+        start_len = len(data)
+        finish_len = len(non_duplicates)
+        print(f'Starting dps = {start_len}. Remove duplicates => {finish_len}')
+        return resulting_data
