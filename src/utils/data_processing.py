@@ -15,6 +15,7 @@ class DataProcessor:
 
     # Process given data files, return list(dict({text, ingress}))
     def process_data(self, path):
+        #import pdb; pdb.set_trace()
         if os.path.isfile(path):
             text_ingress_list = self.get_text_ingress_list(path)
         else:
@@ -25,13 +26,18 @@ class DataProcessor:
     # Process data that is on the format folder/[tar.gz(folder)]/[message]
     def read_data_folder(self, path):
         text_ingress_list = []
-
+        i = 0
         # Open all tar files and process the containing messages
-        for f in glob.glob(os.path.join(path, '*.tar.gz')):
-            tar = tarfile.open(f)
-            current_text_ingress_list = self.process_messages(tar)
-            text_ingress_list.extend(current_text_ingress_list)
-            tar.close()
+        #for f in glob.glob(os.path.join(path, '*.tar.gz')):
+        for x in os.listdir(path):
+            i += 1
+            print(f'Processing file number {i}')
+            f = os.path.join(path,x)
+            if tarfile.is_tarfile(f):
+                tar = tarfile.open(f)
+                current_text_ingress_list = self.process_messages(tar)
+                text_ingress_list.extend(current_text_ingress_list)
+                tar.close()
 
         return text_ingress_list
 
