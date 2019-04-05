@@ -18,7 +18,17 @@ class Pipeline:
         self.loaded_data_file_path = loaded_data_file_path
         self.compressed_data_path = compressed_data_path
 
+    def init_data_files(self, fps):
+        combined_data = []
+        for fp in fps:
+            with open(fp, 'r') as f:
+                data = json.load(f)
+                combined_data += data
+        self.data = combined_data
+        print(f'Data initialized with {len(self.data)} number of dps')
+    
     def init_data(self):
+        #import pdb; pdb.set_trace()
         if not self.loaded_data_file_path and self.compressed_data_path:  # No data file provided, process from data set
             fp = os.path.join(self.base_path, self.compressed_data_path)
             print(f'Processing compressed data set from {fp}')
@@ -49,7 +59,7 @@ class Pipeline:
             json.dump(self.data, f)
             print(f'Data file generated at {fp}')
 
-    def clean_data(self, text_size_threshold=2000, ingress_size_threshold=300, low_end=0.01, high_end=0.3):
+    def clean_data(self, text_size_threshold=400, ingress_size_threshold=200, low_end=0.01, high_end=0.3):
         size_before_cleaning = len(self.data)
         print('~~Cleaning data~~')
         print('Remove dps containing unwanted tokens')
@@ -66,13 +76,13 @@ class Pipeline:
         sample_indices = np.random.rand(nbr_of_files)
         sample_indices = np.floor(sample_indices * len(self.data)).astype(int)
 
-        with open(self.base_path + "/data/input_large.txt", 'w') as f:
+        with open(os.path.join(self.base_path,"data/input.txt"), 'wb') as f:
             for index in sample_indices:
                 line = self.data[index]['text']
                 line = line.replace('\n', '') + '\n'
                 f.write(line.encode('utf-8'))
 
-        with open(self.base_path + "/data/target_large.txt", 'w') as f:
+        with open(os.path.join(self.base_path,"data/target.txt"), 'wb') as f:
             for index in sample_indices:
                 line = self.data[index]['ingress']
                 line = line.replace('\n', '') + '\n'
@@ -97,11 +107,12 @@ def main():
 
     pipeline = Pipeline(loaded_data_file_path=opt.loaded_data_file_path, compressed_data_path=opt.compressed_data_path)
     pipeline.init_data()
-    #pipeline.generate_data_file('mars_data_2.json')
-    # pipeline.clean_data()
-    # pipeline.generate_data_file('mars_data_clean.json')
-    pipeline.visualize_data()
-    # pipeline.create_input_and_target_files(300000000)
+    #pipeline.init_data_files(['data/mars_data_clean_half.json', 'data/mars_data_clean_half_2.json'])
+    #pipeline.generate_data_file('mars_data_clean.json')
+    pipeline.clean_data()
+    #pipeline.generate_data_file('mars_data_clean_400maxlen.json')
+    #pipeline.visualize_data()
+    pipeline.create_input_and_target_files(30000000)
 
 
 if __name__ == '__main__':
