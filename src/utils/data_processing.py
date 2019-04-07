@@ -131,6 +131,28 @@ class DataProcessor:
                        d['text']) <= high_end]
         return reduced
 
+    def remove_duplicates_2(self, data):
+        hash_map = {}
+
+        count = 0
+        for dp in data:
+            hash_map[dp['ingress']] = dp['text']
+            count += 1
+            if count % 1000 == 0:
+                print(f'Processed files: {count}')
+        
+        data_len = len(data)
+        dict_len = len(hash_map)
+
+        print(f'Number of dps before trim = {data_len}. Remove duplicates => {dict_len}')
+
+        resulting_data = []
+        for key, val in hash_map.items():
+            resulting_data.append({'ingress':key, 'text': val})
+        
+        print(f'Resulting dps: {len(resulting_data)}')
+        return resulting_data    
+
     def remove_duplicates(self, data):
         print('Counting duplicates.')
         non_duplicates = []

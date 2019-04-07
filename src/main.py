@@ -59,7 +59,7 @@ class Pipeline:
             json.dump(self.data, f)
             print(f'Data file generated at {fp}')
 
-    def clean_data(self, text_size_threshold=400, ingress_size_threshold=200, low_end=0.01, high_end=0.3):
+    def clean_data(self, text_size_threshold=2000, ingress_size_threshold=300, low_end=0.01, high_end=0.3):
         size_before_cleaning = len(self.data)
         print('~~Cleaning data~~')
         print('Remove dps containing unwanted tokens')
@@ -76,13 +76,13 @@ class Pipeline:
         sample_indices = np.random.rand(nbr_of_files)
         sample_indices = np.floor(sample_indices * len(self.data)).astype(int)
 
-        with open(os.path.join(self.base_path,"data/input.txt"), 'wb') as f:
+        with open(os.path.join(self.base_path,"data/input_750kdps_nondup.txt"), 'wb') as f:
             for index in sample_indices:
                 line = self.data[index]['text']
                 line = line.replace('\n', '') + '\n'
                 f.write(line.encode('utf-8'))
 
-        with open(os.path.join(self.base_path,"data/target.txt"), 'wb') as f:
+        with open(os.path.join(self.base_path,"data/target_750kdps_nondup.txt"), 'wb') as f:
             for index in sample_indices:
                 line = self.data[index]['ingress']
                 line = line.replace('\n', '') + '\n'
@@ -97,22 +97,28 @@ class Pipeline:
 
     def visualize_data(self):
         self.data_processor.visualize_data_point_sizes(self.data)
-
+    
+    def remove_duplicates(self):
+        self.data = self.data_processor.remove_duplicates_2(self.data)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-loaded_data_file_path', required=False, default=None)
-    parser.add_argument('-compressed_data_path', required=False, default=None)
+    parser.add_argument('-compressed_data_path', required=False, default='final_data')
     opt = parser.parse_args()
 
     pipeline = Pipeline(loaded_data_file_path=opt.loaded_data_file_path, compressed_data_path=opt.compressed_data_path)
     pipeline.init_data()
     #pipeline.init_data_files(['data/mars_data_clean_half.json', 'data/mars_data_clean_half_2.json'])
-    #pipeline.generate_data_file('mars_data_clean.json')
+    #pipeline.clean_data()
+    pipeline.generate_data_file('final_data.json')
     pipeline.clean_data()
-    #pipeline.generate_data_file('mars_data_clean_400maxlen.json')
+    #pipeline.remove_duplicates()
+    pipeline.generate_data_file('final_data_clean.json')
     #pipeline.visualize_data()
-    pipeline.create_input_and_target_files(30000000)
+    #pipeline.create_input_and_target_files(30000000)
+    
+    
 
 
 if __name__ == '__main__':
