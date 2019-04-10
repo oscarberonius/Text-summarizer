@@ -27,7 +27,7 @@ class DataProcessor:
         for x in os.listdir(path):
             i += 1
             print(f'Processing file number {i}')
-            f = os.path.join(path,x)
+            f = os.path.join(path, x)
             if tarfile.is_tarfile(f):
                 tar = tarfile.open(f)
                 current_text_ingress_list = self.process_messages(tar)
@@ -84,8 +84,8 @@ class DataProcessor:
 
         clean_data = [d for d in data if not baddict(d)]
         return clean_data
-        
-    def visualize_data_point_sizes(self, dictionaries):
+
+    def visualize_token_count(self, dictionaries):
         x = []
         y = []
         z = []
@@ -93,10 +93,10 @@ class DataProcessor:
             x.append(len(d['text']))
             y.append(len(d['ingress']))
             if len(d['text']) > 0:
-                val = len(d['ingress']) / len(d['text'])
+                z_val = len(d['ingress']) / len(d['text'])
             else:
-                val = len(d['ingress'])
-            z.append(val)
+                z_val = len(d['ingress'])
+            z.append(z_val)
 
         print("Max length of texts = {mean_text}.".format(mean_text=np.max(x)))
         print("Max length of ingresses = {mean_text}.".format(mean_text=np.max(y)))
@@ -110,22 +110,25 @@ class DataProcessor:
         print("Data points: {data_points}".format(data_points=len(dictionaries)))
 
         plt.subplot(311)
-        plt.hist(x, range=(0, max(x)), color='red', label='text lengths')
+        plt.hist(x, range=(0, max(x)), color='red')
+        plt.title('Text length')
         plt.subplot(312)
-        plt.hist(y, range=(0, max(y)), color='blue', label='ingress lengths')
+        plt.hist(y, range=(0, max(y)), color='blue')
+        plt.title('Ingress length')
         plt.subplot(313)
-        plt.hist(z, range=(0, max(z)), color='green', label='ingress/text ratios')
+        plt.hist(z, range=(0, max(z)), color='green')
+        plt.title('Ingress/text length ratio')
         plt.show()
 
-    def visualize_data_point_sizes_2(self, dictionaries):
+    def visualize_word_count(self, dictionaries):
         x = []
         y = []
         z = []
         for d in dictionaries:
             x.append(len(d['text'].split(' ')))
             y.append(len(d['ingress'].split(' ')))
-            if len(d['text'].split(' ')) > 0 :
-                z_val = len(d['ingress'].split(' '))/ len(d['text'].split(' '))
+            if len(d['text'].split(' ')) > 0:
+                z_val = len(d['ingress'].split(' ')) / len(d['text'].split(' '))
             else:
                 z_val = len(d['ingress'].split(' '))
             z.append(z_val)
@@ -141,38 +144,49 @@ class DataProcessor:
         print("Data points: {data_points}".format(data_points=len(dictionaries)))
 
         plt.subplot(311)
-        plt.hist(x, range=(0, max(x)), color='red', label='text lengths')
+        plt.hist(x, range=(0, max(x)), color='red')
+        plt.title('Text length')
         plt.subplot(312)
-        plt.hist(y, range=(0, max(y)), color='blue', label='ingress lengths')
+        plt.hist(y, range=(0, max(y)), color='blue')
+        plt.title('Ingress length')
         plt.subplot(313)
-        plt.hist(z, range=(0, max(z)), color='green', label='ingress/text ratios')
+        plt.hist(z, range=(0, max(z)), color='green')
+        plt.title('Ingress/text length ratio')
         plt.show()
 
-    def remove_large_texts(self, dictionaries, text_threshold, ingress_threshold):
+    @staticmethod
+    def trim_tokens(dictionaries, text_low_end, text_high_end, ingress_low_end, ingress_high_end):
         reduced = [d for d in dictionaries if
-                   len(d['text']) <= text_threshold and len(d['ingress']) <= ingress_threshold]
+                   text_low_end <= len(d['text']) <= text_high_end and ingress_low_end <= len(
+                       d['ingress']) <= ingress_high_end]
         return reduced
 
-    def remove_large_texts_2(self, dictionaries, text_threshold, ingress_threshold):
+    @staticmethod
+    def trim_words(dictionaries, text_low_end, text_high_end, ingress_low_end, ingress_high_end):
         reduced = [d for d in dictionaries if
-                   len(d['text'].split(' ')) <= text_threshold and len(d['ingress'].split(' ')) <= ingress_threshold]
+                   text_low_end <= len(d['text'].split(' ')) <= text_high_end and ingress_low_end <= len(
+                       d['ingress'].split(' ')) <= ingress_high_end]
         return reduced
 
-    def remove_unbalanced_texts(self, dictionaries, low_end, high_end):
+    @staticmethod
+    def remove_unbalanced_tokens(dictionaries, low_end, high_end):
         # Removes all dictionaries where length(ingress/length(text) is outside low_end - high_end (including empty elements)
         reduced = [d for d in dictionaries if
                    len(d['ingress']) > 0 and len(d['text']) > 0 and low_end <= len(d['ingress']) / len(
                        d['text']) <= high_end]
         return reduced
 
-    def remove_unbalanced_texts_2(self, dictionaries, low_end, high_end):
+    @staticmethod
+    def remove_unbalanced_words(dictionaries, low_end, high_end):
         # Removes all dictionaries where length(ingress/length(text) is outside low_end - high_end (including empty elements)
         reduced = [d for d in dictionaries if
-                   len(d['ingress'].split(' ')) > 0 and len(d['text'].split(' ')) > 0 and low_end <= len(d['ingress'].split(' ')) / len(
+                   len(d['ingress'].split(' ')) > 0 and len(d['text'].split(' ')) > 0 and low_end <= len(
+                       d['ingress'].split(' ')) / len(
                        d['text'].split(' ')) <= high_end]
         return reduced
 
-    def remove_duplicates(self, data):
+    @staticmethod
+    def remove_duplicates(data):
         hash_map = {}
         count = 0
         for dp in data:
@@ -180,7 +194,7 @@ class DataProcessor:
             count += 1
             if count % 1000 == 0:
                 print(f'Processed files: {count}')
-        
+
         data_len = len(data)
         dict_len = len(hash_map)
 
@@ -189,7 +203,7 @@ class DataProcessor:
         resulting_data = []
 
         for key, val in hash_map.items():
-            resulting_data.append({'ingress':key, 'text': val})
-        
+            resulting_data.append({'ingress': key, 'text': val})
+
         print(f'Resulting dps: {len(resulting_data)}')
         return resulting_data
