@@ -4,7 +4,6 @@ from utils.data_processing import DataProcessor
 
 from os.path import dirname
 import json
-import sys
 import argparse
 import tarfile
 import numpy as np
@@ -17,6 +16,7 @@ class Pipeline:
         self.data_processor = DataProcessor()
         self.loaded_data_file_path = loaded_data_file_path
         self.compressed_data_path = compressed_data_path
+        self.data = None
 
     def init_data_files(self, fps):
         combined_data = []
@@ -28,7 +28,6 @@ class Pipeline:
         print(f'Data initialized with {len(self.data)} number of dps')
     
     def init_data(self):
-        #import pdb; pdb.set_trace()
         if not self.loaded_data_file_path and self.compressed_data_path:  # No data file provided, process from data set
             fp = os.path.join(self.base_path, self.compressed_data_path)
             print(f'Processing compressed data set from {fp}')
@@ -71,6 +70,18 @@ class Pipeline:
         print('~~Cleaning complete~~')
         print(f'Number of dps {size_before_cleaning} -> {len(self.data)}')
 
+    def clean_data_2(self, text_size_threshold=400, ingress_size_threshold=100, low_end=0.01, high_end=0.3):
+        size_before_cleaning = len(self.data)
+        print('~~Cleaning data~~')
+        print('Remove dps containing unwanted tokens')
+        data = self.data_processor.clean_data(self.data)
+        print('Remove unbalanced texts')
+        data = self.data_processor.remove_unbalanced_texts_2(data, low_end, high_end)
+        print('Remove large texts')
+        self.data = self.data_processor.remove_large_texts_2(data, text_size_threshold, ingress_size_threshold)
+        print('~~Cleaning complete~~')
+        print(f'Number of dps {size_before_cleaning} -> {len(self.data)}')
+
     def create_input_and_target_files(self, nbr_of_files):
         nbr_of_files = len(self.data) - 1 if nbr_of_files >= len(self.data) else nbr_of_files
         sample_indices = np.random.rand(nbr_of_files)
@@ -97,28 +108,29 @@ class Pipeline:
 
     def visualize_data(self):
         self.data_processor.visualize_data_point_sizes(self.data)
-    
+
+    def visualize_data_2(self):
+        self.data_processor.visualize_data_point_sizes_2(self.data)
+
     def remove_duplicates(self):
-        self.data = self.data_processor.remove_duplicates_2(self.data)
+        self.data_processor.remove_duplicates(self.data)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-loaded_data_file_path', required=False, default=None)
-    parser.add_argument('-compressed_data_path', required=False, default='final_data')
+    parser.add_argument('-loaded_data_file_path', required=False, default='final_data_nondup_clean_1.json')
+    parser.add_argument('-compressed_data_path', required=False, default=None)
     opt = parser.parse_args()
 
     pipeline = Pipeline(loaded_data_file_path=opt.loaded_data_file_path, compressed_data_path=opt.compressed_data_path)
-    pipeline.init_data()
-    #pipeline.init_data_files(['data/mars_data_clean_half.json', 'data/mars_data_clean_half_2.json'])
+    #pipeline.init_data()
     #pipeline.clean_data()
-    pipeline.generate_data_file('final_data.json')
-    pipeline.clean_data()
-    #pipeline.remove_duplicates()
-    pipeline.generate_data_file('final_data_clean.json')
-    #pipeline.visualize_data()
-    #pipeline.create_input_and_target_files(30000000)
-    
-    
+    #pipeline.clean_data_2() # clean_data - symbols, clean_data_2 - words
+    #pipeline.generate_data_file('mars_data_1.json')
+    #pipeline.clean_data()
+    #pipeline.generate_data_file('mars_data_clean2.json')
+    pipeline.visualize_data_2()
+    #pipeline.create_input_and_target_files(300000000)
+    #pipeline.count_duplicates()
 
 
 if __name__ == '__main__':
