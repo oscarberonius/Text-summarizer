@@ -131,7 +131,7 @@ class DataProcessor:
                        d['text']) <= high_end]
         return reduced
 
-    def remove_duplicates_2(self, data):
+    def remove_duplicates(self, data):
         hash_map = {}
 
         count = 0
@@ -151,27 +151,4 @@ class DataProcessor:
             resulting_data.append({'ingress':key, 'text': val})
         
         print(f'Resulting dps: {len(resulting_data)}')
-        return resulting_data    
-
-    def remove_duplicates(self, data):
-        print('Counting duplicates.')
-        non_duplicates = []
-        resulting_data = []
-        count = 0
-        removed = 0
-
-        for dp in data:
-
-            if dp['ingress'] not in non_duplicates:
-                non_duplicates.append(dp['ingress'])
-                resulting_data.append(dp)
-            else:
-                removed += 1
-            count +=1
-            if count%1000:
-                print(f'At dp # {count}. Removed = {removed}')
-
-        start_len = len(data)
-        finish_len = len(non_duplicates)
-        print(f'Starting dps = {start_len}. Remove duplicates => {finish_len}')
         return resulting_data
