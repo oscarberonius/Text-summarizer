@@ -26,7 +26,7 @@ class Pipeline:
                 combined_data += data
         self.data = combined_data
         print(f'Data initialized with {len(self.data)} number of dps')
-    
+
     def init_data(self):
         if not self.loaded_data_file_path and self.compressed_data_path:  # No data file provided, process from data set
             fp = os.path.join(self.base_path, self.compressed_data_path)
@@ -58,28 +58,36 @@ class Pipeline:
             json.dump(self.data, f)
             print(f'Data file generated at {fp}')
 
-    def clean_data(self, text_size_threshold=2000, ingress_size_threshold=300, low_end=0.01, high_end=0.3):
+    def clean_data(self):
         size_before_cleaning = len(self.data)
         print('~~Cleaning data~~')
         print('Remove dps containing unwanted tokens')
-        data = self.data_processor.clean_data(self.data)
-        print('Remove unbalanced texts')
-        data = self.data_processor.remove_unbalanced_texts(data, low_end, high_end)
-        print('Remove large texts')
-        self.data = self.data_processor.remove_large_texts(data, text_size_threshold, ingress_size_threshold)
+        self.data = self.data_processor.clean_data(self.data)
         print('~~Cleaning complete~~')
         print(f'Number of dps {size_before_cleaning} -> {len(self.data)}')
 
-    def clean_data_2(self, text_size_threshold=400, ingress_size_threshold=100, low_end=0.01, high_end=0.3):
+    # Removes data points where number of tokens fall outside specified interval, as well as data points where the ratio
+    # of number of tokens text/ingress is unbalanced given an interval
+    def trim_tokens(self, text_low_end=1, text_high_end=2000, ingress_low_end=1, ingress_high_end=300, ratio_low_end=0.01, ratio_high_end=0.3):
         size_before_cleaning = len(self.data)
-        print('~~Cleaning data~~')
-        print('Remove dps containing unwanted tokens')
-        data = self.data_processor.clean_data(self.data)
-        print('Remove unbalanced texts')
-        data = self.data_processor.remove_unbalanced_texts_2(data, low_end, high_end)
-        print('Remove large texts')
-        self.data = self.data_processor.remove_large_texts_2(data, text_size_threshold, ingress_size_threshold)
-        print('~~Cleaning complete~~')
+        print('~~Trimming data on number of tokens~~')
+        print('Remove unbalanced dps')
+        self.data = self.data_processor.remove_unbalanced_tokens(self.data, ratio_low_end, ratio_high_end)
+        print(f'{size_before_cleaning - len(self.data)} dps removed.')
+        self.data = self.data_processor.trim_tokens(self.data, text_low_end, text_high_end, ingress_low_end, ingress_high_end)
+        print(f'{size_before_cleaning - len(self.data)} dps removed.')
+        print(f'Number of dps {size_before_cleaning} -> {len(self.data)}')
+
+    # Same as trim_tokens except measured by number of words instead of number of tokens
+    def trim_words(self, text_low_end=1, text_high_end=350, ingress_low_end=1, ingress_high_end=50, ratio_low_end=0.01, ratio_high_end=0.3):
+        size_before_cleaning = len(self.data)
+        print('~~Trimming data on number of words~~')
+        print('Remove unbalanced dps:')
+        self.data = self.data_processor.remove_unbalanced_words(self.data, ratio_low_end, ratio_high_end)
+        print(f'{size_before_cleaning - len(self.data)} dps removed.')
+        print(f'Trim words:')
+        self.data = self.data_processor.trim_words(self.data, text_low_end, text_high_end, ingress_low_end, ingress_high_end)
+        print(f'{size_before_cleaning - len(self.data)} dps removed.')
         print(f'Number of dps {size_before_cleaning} -> {len(self.data)}')
 
     def create_input_and_target_files(self, nbr_of_files):
@@ -87,13 +95,13 @@ class Pipeline:
         sample_indices = np.random.rand(nbr_of_files)
         sample_indices = np.floor(sample_indices * len(self.data)).astype(int)
 
-        with open(os.path.join(self.base_path,"data/input_750kdps_nondup.txt"), 'wb') as f:
+        with open(os.path.join(self.base_path,"data/input_.txt"), 'wb') as f:
             for index in sample_indices:
                 line = self.data[index]['text']
                 line = line.replace('\n', '') + '\n'
                 f.write(line.encode('utf-8'))
 
-        with open(os.path.join(self.base_path,"data/target_750kdps_nondup.txt"), 'wb') as f:
+        with open(os.path.join(self.base_path,"data/target_.txt"), 'wb') as f:
             for index in sample_indices:
                 line = self.data[index]['ingress']
                 line = line.replace('\n', '') + '\n'
@@ -106,11 +114,11 @@ class Pipeline:
         idf = TfIdf(path, query, extraction_quota=0.5)
         idf.perform_extraction(self.base_path + '/data/extractive_test_output.txt')
 
-    def visualize_data(self):
-        self.data_processor.visualize_data_point_sizes(self.data)
+    def visualize_token_count(self):
+        self.data_processor.visualize_token_count(self.data)
 
-    def visualize_data_2(self):
-        self.data_processor.visualize_data_point_sizes_2(self.data)
+    def visualize_word_count(self):
+        self.data_processor.visualize_word_count(self.data)
 
     def remove_duplicates(self):
         self.data_processor.remove_duplicates(self.data)
@@ -123,12 +131,15 @@ def main():
 
     pipeline = Pipeline(loaded_data_file_path=opt.loaded_data_file_path, compressed_data_path=opt.compressed_data_path)
     #pipeline.init_data()
-    #pipeline.clean_data()
+
+    pipeline.init_data_files(['final_data_nondup_clean_1.json', 'final_data_nondup_clean_2.json', 'final_data_nondup_clean_3.json', 'final_data_nondup_clean_4.json'])
+    pipeline.trim_words()
+    pipeline.trim_tokens()
+    pipeline.visualize_token_count()
     #pipeline.clean_data_2() # clean_data - symbols, clean_data_2 - words
     #pipeline.generate_data_file('mars_data_1.json')
     #pipeline.clean_data()
     #pipeline.generate_data_file('mars_data_clean2.json')
-    pipeline.visualize_data_2()
     #pipeline.create_input_and_target_files(300000000)
     #pipeline.count_duplicates()
 
