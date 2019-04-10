@@ -2,9 +2,6 @@ from __future__ import division
 import json
 import tarfile
 import os
-import glob
-from os.path import dirname
-from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,7 +12,6 @@ class DataProcessor:
 
     # Process given data files, return list(dict({text, ingress}))
     def process_data(self, path):
-        #import pdb; pdb.set_trace()
         if os.path.isfile(path):
             text_ingress_list = self.get_text_ingress_list(path)
         else:
@@ -28,7 +24,6 @@ class DataProcessor:
         text_ingress_list = []
         i = 0
         # Open all tar files and process the containing messages
-        #for f in glob.glob(os.path.join(path, '*.tar.gz')):
         for x in os.listdir(path):
             i += 1
             print(f'Processing file number {i}')
@@ -99,7 +94,10 @@ class DataProcessor:
             y.append(len(d['ingress']))
             if len(d['text']) > 0:
                 val = len(d['ingress']) / len(d['text'])
-                z.append(val)
+            else:
+                val = len(d['ingress'])
+            z.append(val)
+
         print("Max length of texts = {mean_text}.".format(mean_text=np.max(x)))
         print("Max length of ingresses = {mean_text}.".format(mean_text=np.max(y)))
         print("Max size ratio ingress/text = {mean_text}.".format(mean_text=np.max(z)))
@@ -119,9 +117,45 @@ class DataProcessor:
         plt.hist(z, range=(0, max(z)), color='green', label='ingress/text ratios')
         plt.show()
 
+    def visualize_data_point_sizes_2(self, dictionaries):
+        x = []
+        y = []
+        z = []
+        for d in dictionaries:
+            x.append(len(d['text'].split(' ')))
+            y.append(len(d['ingress'].split(' ')))
+            if len(d['text'].split(' ')) > 0 :
+                z_val = len(d['ingress'].split(' '))/ len(d['text'].split(' '))
+            else:
+                z_val = len(d['ingress'].split(' '))
+            z.append(z_val)
+        print("Max words of texts = {mean_text}.".format(mean_text=np.max(x)))
+        print("Max words of ingresses = {mean_text}.".format(mean_text=np.max(y)))
+        print("Max word ratio ingress/text = {mean_text}.".format(mean_text=np.max(z)))
+        print("Median words of texts = {mean_text}.".format(mean_text=np.median(x)))
+        print("Median words of ingresses = {mean_ingress}.".format(mean_ingress=np.median(y)))
+        print("Median word ratio ingress/text = {mean_ratio}.".format(mean_ratio=np.median(z)))
+        print("Average words of text= {avg_ingress}.".format(avg_ingress=np.average(x)))
+        print("Average words of ingresses = {avg_ingress}.".format(avg_ingress=np.average(y)))
+        print("Average word ratio ingress/text = {avg_ingress}.".format(avg_ingress=np.average(z)))
+        print("Data points: {data_points}".format(data_points=len(dictionaries)))
+
+        plt.subplot(311)
+        plt.hist(x, range=(0, max(x)), color='red', label='text lengths')
+        plt.subplot(312)
+        plt.hist(y, range=(0, max(y)), color='blue', label='ingress lengths')
+        plt.subplot(313)
+        plt.hist(z, range=(0, max(z)), color='green', label='ingress/text ratios')
+        plt.show()
+
     def remove_large_texts(self, dictionaries, text_threshold, ingress_threshold):
         reduced = [d for d in dictionaries if
                    len(d['text']) <= text_threshold and len(d['ingress']) <= ingress_threshold]
+        return reduced
+
+    def remove_large_texts_2(self, dictionaries, text_threshold, ingress_threshold):
+        reduced = [d for d in dictionaries if
+                   len(d['text'].split(' ')) <= text_threshold and len(d['ingress'].split(' ')) <= ingress_threshold]
         return reduced
 
     def remove_unbalanced_texts(self, dictionaries, low_end, high_end):
@@ -131,9 +165,15 @@ class DataProcessor:
                        d['text']) <= high_end]
         return reduced
 
+    def remove_unbalanced_texts_2(self, dictionaries, low_end, high_end):
+        # Removes all dictionaries where length(ingress/length(text) is outside low_end - high_end (including empty elements)
+        reduced = [d for d in dictionaries if
+                   len(d['ingress'].split(' ')) > 0 and len(d['text'].split(' ')) > 0 and low_end <= len(d['ingress'].split(' ')) / len(
+                       d['text'].split(' ')) <= high_end]
+        return reduced
+
     def remove_duplicates(self, data):
         hash_map = {}
-
         count = 0
         for dp in data:
             hash_map[dp['ingress']] = dp['text']
@@ -147,6 +187,7 @@ class DataProcessor:
         print(f'Number of dps before trim = {data_len}. Remove duplicates => {dict_len}')
 
         resulting_data = []
+
         for key, val in hash_map.items():
             resulting_data.append({'ingress':key, 'text': val})
         
