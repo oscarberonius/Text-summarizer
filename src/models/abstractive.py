@@ -13,9 +13,9 @@ class Abstractive:
     def __init__(self, data=None):
         data = data # list(dict({text, ingress}))
         self.batch_size = 64  # Batch size for training.
-        self.epochs = 50  # Number of epochs to train for.
+        self.epochs = 15  # Number of epochs to train for.
         self.latent_dim = 256  # Latent dimensionality of the encoding space.
-        self.num_samples = 50000#200000  # Number of samples to train on.
+        self.num_samples = 15000#200000  # Number of samples to train on.
         if len(data) < self.num_samples:
             self.num_samples = len(data)
         self.data_chunk_size = self.batch_size * 10 # Size of the data chunks that will be generated and trained on at a time. IMPORTANT: If too large then all RAM will be eaten.
@@ -56,13 +56,30 @@ class Abstractive:
 
         # Define an input sequence and process it.
         encoder_inputs = Input(shape=(self.max_encoder_seq_length, self.num_encoder_tokens))
-        #encoder = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
-        encoder = LSTM(self.latent_dim, return_state=True)
-        encoder_outputs, h, g = encoder(encoder_inputs)
-        encoder_states = [h, g]
-        #encoder_outputs, encoder_states = encoder(encoder_inputs)
-        #encoder2 = IndRNN(self.latent_dim, return_state=True)
-        #encoder_outputs, encoder_states = encoder2(encoder1_outputs)
+        encoder1 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        #encoder = LSTM(self.latent_dim, return_state=True)
+        #encoder_outputs, h, g = encoder(encoder_inputs)
+        #encoder_states = [h, g]
+        encoder1_outputs, _ = encoder1(encoder_inputs)
+        encoder2 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        encoder2_outputs, _ = encoder2(encoder1_outputs)
+        encoder3 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        encoder3_outputs, _ = encoder3(encoder2_outputs)
+        encoder4 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        encoder4_outputs, _ = encoder4(encoder3_outputs)
+        encoder5 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        encoder5_outputs, _ = encoder5(encoder4_outputs)
+        encoder6 = IndRNN(self.latent_dim, return_state=True)
+        encoder6_outputs, encoder_states = encoder6(encoder5_outputs)
+        # encoder7 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        # encoder7_outputs, _ = encoder7(encoder6_outputs)
+        # encoder8 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        # encoder8_outputs, _ = encoder8(encoder7_outputs)
+        # encoder9 = IndRNN(self.latent_dim, return_state=True, return_sequences=True)
+        # encoder9_outputs, _ = encoder9(encoder8_outputs)
+        # encoder10 = IndRNN(self.latent_dim, return_state=True)
+        # encoder10_outputs, encoder_states = encoder10(encoder9_outputs)
+        
         # We discard `encoder_outputs` and only keep the states.
 
         # Set up the decoder, using `encoder_states` as initial state.
@@ -70,9 +87,8 @@ class Abstractive:
         # We set up our decoder to return full output sequences,
         # and to return internal states as well. We don't use the
         # return states in the training model, but we will use them in inference.
-        decoder_indrnn = LSTM(self.latent_dim, return_sequences=True, return_state=True)
-        decoder_outputs, _, _ = decoder_indrnn(decoder_inputs,
-                                            initial_state=encoder_states)
+        decoder_indrnn = IndRNN(self.latent_dim, return_sequences=True, return_state=True)
+        decoder_outputs, _ = decoder_indrnn(decoder_inputs, initial_state=encoder_states)
         decoder_dense = Dense(self.num_decoder_tokens, activation='softmax')
         decoder_outputs = decoder_dense(decoder_outputs)
 
@@ -100,7 +116,7 @@ class Abstractive:
         encoder_input_data, _, _ = self.getTrainingChunk(0) # Only for testing a sentence from the input when decoding later. TODO: Make proper decoding module 
 
         # Save model
-        model.save('lstm_50ksamples.h5')
+        model.save('indrnn.h5')
 
         # Next: inference mode (sampling).
         # Here's the drill:
@@ -113,16 +129,25 @@ class Abstractive:
         # Define sampling models
         encoder_model = Model(encoder_inputs, encoder_states)
 
-        decoder_state_input_h = Input(shape=(self.latent_dim,))
-        decoder_state_input_c = Input(shape=(self.latent_dim,))
-        decoder_state_inputs = [decoder_state_input_h, decoder_state_input_c]
-        decoder_outputs, decoder_state_h, decoder_state_c = decoder_indrnn(
-            decoder_inputs, initial_state=decoder_state_inputs)
-        decoder_state = [decoder_state_h, decoder_state_c]
+        # --- LSTM ---
+        #decoder_state_input_h = Input(shape=(self.latent_dim,))
+        #decoder_state_input_c = Input(shape=(self.latent_dim,))
+        #decoder_state_inputs = [decoder_state_input_h, decoder_state_input_c]
+        #decoder_outputs, decoder_state_h, decoder_state_c = decoder_indrnn(
+        #decoder_state = [decoder_state_h, decoder_state_c]
+        #    decoder_inputs, initial_state=decoder_state_inputs)
+        # decoder_model = Model(
+        #     [decoder_inputs] + decoder_state_inputs,
+        #     [decoder_outputs] + decoder_state)
+
+        # --- IndRNN ---
+        decoder_state_inputs = Input(shape=(self.latent_dim,))
+        decoder_outputs, decoder_state = decoder_indrnn(decoder_inputs, initial_state=decoder_state_inputs)
         decoder_outputs = decoder_dense(decoder_outputs)
+
         decoder_model = Model(
-            [decoder_inputs] + decoder_state_inputs,
-            [decoder_outputs] + decoder_state)
+            [decoder_inputs] + [decoder_state_inputs],
+            [decoder_outputs] + [decoder_state])
 
         # Reverse-lookup token index to decode sequences back to
         # something readable.
@@ -146,8 +171,8 @@ class Abstractive:
             stop_condition = False
             decoded_sentence = ''
             while not stop_condition:
-                output_tokens, h, c = decoder_model.predict(
-                    [target_seq] + states_value)
+                output_tokens, state = decoder_model.predict(
+                    [target_seq] + [states_value])
 
                 # Sample a token
                 sampled_token_index = np.argmax(output_tokens[0, -1, :])
@@ -165,10 +190,10 @@ class Abstractive:
                 target_seq[0, 0, sampled_token_index] = 1.
 
                 # Update states
-                states_value = [h, c]
+                states_value = state
 
             return decoded_sentence
-        path = dirname(__file__)+'/../data/output_lstm_50ksamples.txt'
+        path = dirname(__file__)+'/../data/output_indrnn_15ksamples.txt'
         
         with open(path, 'wb') as f:
             for seq_index in range(100):

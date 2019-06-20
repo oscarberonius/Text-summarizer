@@ -68,7 +68,7 @@ class Pipeline:
 
     # Removes data points where number of tokens fall outside specified interval, as well as data points where the ratio
     # of number of tokens text/ingress is unbalanced given an interval
-    def trim_tokens(self, text_low_end=1, text_high_end=2000, ingress_low_end=1, ingress_high_end=300, ratio_low_end=0.01, ratio_high_end=0.3):
+    def trim_tokens(self, text_low_end=1, text_high_end=1000, ingress_low_end=1, ingress_high_end=180, ratio_low_end=0.01, ratio_high_end=0.3):
         size_before_cleaning = len(self.data)
         print('~~Trimming data on number of tokens~~')
         print('Remove unbalanced dps')
@@ -79,7 +79,7 @@ class Pipeline:
         print(f'Number of dps {size_before_cleaning} -> {len(self.data)}')
 
     # Same as trim_tokens except measured by number of words instead of number of tokens
-    def trim_words(self, text_low_end=1, text_high_end=350, ingress_low_end=1, ingress_high_end=50, ratio_low_end=0.01, ratio_high_end=0.3):
+    def trim_words(self, text_low_end=1, text_high_end=300, ingress_low_end=1, ingress_high_end=50, ratio_low_end=0.01, ratio_high_end=0.3):
         size_before_cleaning = len(self.data)
         print('~~Trimming data on number of words~~')
         print('Remove unbalanced dps:')
@@ -121,7 +121,10 @@ class Pipeline:
         self.data_processor.visualize_word_count(self.data)
 
     def remove_duplicates(self):
-        self.data_processor.remove_duplicates(self.data)
+        self.data = self.data_processor.remove_duplicates(self.data)
+
+    def test_abstractive(self):
+        self.abstractive = Abstractive(self.data)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -133,9 +136,11 @@ def main():
     #pipeline.init_data()
 
     pipeline.init_data_files(['final_data_nondup_clean_1.json', 'final_data_nondup_clean_2.json', 'final_data_nondup_clean_3.json', 'final_data_nondup_clean_4.json'])
-    pipeline.trim_words()
+    pipeline.remove_duplicates()
     pipeline.trim_tokens()
-    pipeline.visualize_token_count()
+    #pipeline.trim_words()
+    pipeline.test_abstractive()
+    #pipeline.visualize_token_count()
     #pipeline.clean_data_2() # clean_data - symbols, clean_data_2 - words
     #pipeline.generate_data_file('mars_data_1.json')
     #pipeline.clean_data()
